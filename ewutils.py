@@ -2939,7 +2939,123 @@ def gvs_insert_bot_ops(id_server, district, enemyfaction):
 				-1,
 				20,
 			))
+
+# Check if any flag shamblers are in this shambler's lane
+def gvs_check_for_flag_shambler(enemy_data):
+	checked_row = None
+	
+	for row in ewcfg.gvs_valid_coords_shambler:
+		if enemy_data.gvs_coord in row:
+			checked_row = row
+			break
 			
+	if checked_row == None:
+		return False
+	
+	flag_shamblers = execute_sql_query("SELECT FROM enemies WHERE enemytype = '{}' AND poi = '{}' AND gvs_coord IN {}".format(ewcfg.enemy_type_flagshambler, enemy_data.poi, tuple(checked_row)))
+	
+	if len(flag_shamblers) > 0:
+		return True
+	else:
+		return False
+
+# Spawn Shambler Raiders in the cardinal directions away from the Shambler Warlord
+def gvs_shambler_raider_summon(enemy_data):
+	current_coord = enemy_data.gvs_coord
+	response = ""
+	
+	if current_coord in ewcfg.gvs_coords_end or current_coord in ewcfg.gvs_coords_start:
+		return response
+	else:
+		valid_rows = ['A', 'B', 'C', 'D', 'E']
+		
+		current_row = current_coord[0]
+		current_column = int(current_coord[1:])
+		row_index = valid_rows.index(current_row)
+		
+		try:
+			north_coord = '{}{}'.format(valid_rows[row_index-1], current_column) 
+		except:
+			north_coord = None
+
+		try:
+			south_coord = '{}{}'.format(valid_rows[row_index + 1], current_column)
+		except:
+			south_coord = None
+			
+		east_coord = '{}{}'.format(current_row, current_column - 1)
+		if east_coord not in ewcfg.gvs_valid_coords_shambler[row_index]:
+			east_coord = None
+		
+		west_coord = '{}{}'.format(current_row, current_column + 1)
+		if west_coord not in ewcfg.gvs_valid_coords_shambler[row_index]:
+			west_coord = None
+		
+		used_coords = []
+		
+		if north_coord != None:
+			used_coords.append(north_coord)
+			
+			ewhunting.spawn_enemy(
+				id_server=enemy_data.id_server,
+				pre_chosen_type=ewcfg.enemy_type_shamblerraider,
+				pre_chosen_level=50,
+				pre_chosen_poi=enemy_data.poi,
+				pre_chosen_faction=ewcfg.psuedo_faction_shamblers,
+				pre_chosen_owner=enemy_data.owner,
+				pre_chosen_coord=_coord,
+				manual_spawn=True
+			)
+			
+		if south_coord != None:
+			used_coords.append(south_coord)
+
+			ewhunting.spawn_enemy(
+				id_server=enemy_data.id_server,
+				pre_chosen_type=ewcfg.enemy_type_shamblerraider,
+				pre_chosen_level=50,
+				pre_chosen_poi=enemy_data.poi,
+				pre_chosen_faction=ewcfg.psuedo_faction_shamblers,
+				pre_chosen_owner=enemy_data.owner,
+				pre_chosen_coord=south_coord,
+				manual_spawn=True
+			)
+			
+		if east_coord != None:
+			used_coords.append(east_coord)
+
+			ewhunting.spawn_enemy(
+				id_server=enemy_data.id_server,
+				pre_chosen_type=ewcfg.enemy_type_shamblerraider,
+				pre_chosen_level=50,
+				pre_chosen_poi=enemy_data.poi,
+				pre_chosen_faction=ewcfg.psuedo_faction_shamblers,
+				pre_chosen_owner=enemy_data.owner,
+				pre_chosen_coord=east_coord,
+				manual_spawn=True
+			)
+			
+		if west_coord != None:
+			used_coords.append(west_coord)
+
+			ewhunting.spawn_enemy(
+				id_server=enemy_data.id_server,
+				pre_chosen_type=ewcfg.enemy_type_shamblerraider,
+				pre_chosen_level=50,
+				pre_chosen_poi=enemy_data.poi,
+				pre_chosen_faction=ewcfg.psuedo_faction_shamblers,
+				pre_chosen_owner=enemy_data.owner,
+				pre_chosen_coord=west_coord,
+				manual_spawn=True
+			)
+		
+		if len(used_coords) == 0:
+			return response
+		else:
+			response = "{} [{}] ({}) summoned Shambler Raiders in coords {}!!".format(enemy_data.display_name, enemy_data.gvs_coord, enemy_data.identifier, formatNiceList(used_coords))
+			return response
+		
+		
 async def degrade_districts(cmd):
 	
 	if not cmd.message.author.guild_permissions.administrator:

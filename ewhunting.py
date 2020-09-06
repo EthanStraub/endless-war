@@ -918,6 +918,10 @@ class EwEnemy:
 			set_damage = int(enemy_data.enemy_props.get('setdamage'))
 			if set_damage != None:
 				slimes_damage = set_damage
+				
+			if enemy_data.enemyclass == ewcfg.enemy_class_shambler and ewutils.gvs_check_for_flag_shambler(enemy_data) == True:
+				slimes_damage = int(slimes_damage * 1.5)
+				print('damage mod applied from flag shambler')
 
 			backfire_damage = slimes_damage
 
@@ -1089,6 +1093,8 @@ class EwEnemy:
 			if enemy_data.attacktype == ewcfg.enemy_attacktype_gvs_g_explosion:
 				delete_enemy(enemy_data)
 				
+		# As of right now, only Gaiaslimeoids can attack multiple enemies
+		# Shamblers can only attack whatever gaiaslimeoid is nearest to them
 		elif target_enemy != None and group_attack:
 			# print('group attack...')
 			
@@ -3557,3 +3563,21 @@ def handle_turn_timers(enemy_data):
 	
 				enemy_data.persist()
 				return response
+			
+	elif enemy_data.enemytype == ewcfg.enemy_type_shamblerwarlord:
+		
+		countdown = enemy_data.enemy_props.get('summoncountdown')
+		
+		if countdown != None:
+			int_countdown = int(countdown)
+			
+			if int_countdown == 0:
+				enemy_data.enemy_props['summoncountdown'] = 6
+				
+				response = ewutils.gvs_shambler_raider_summon(enemy_data)
+				
+			else:
+				enemy_data.enemy_props['summoncountdown'] -= 1
+
+			enemy_data.persist()
+			return response
